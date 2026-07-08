@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Environment
+.env
+
+# Ingestion working data — cloned repos are transient.
+data/sources/
+
+# The built index IS committed (see the nightly workflow), so it is NOT ignored.

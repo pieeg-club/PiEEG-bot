@@ -1,0 +1,2 @@
+# Placeholder so the data/ directory exists before the first ingest.
+# The real index is written here as index.json by `pieeg-bot ingest`.
