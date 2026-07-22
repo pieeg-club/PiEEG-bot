@@ -8,13 +8,14 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml README.md LICENSE ./
-COPY pieeg_bot/ pieeg_bot/
-# The index is committed by the nightly GitHub Action and baked into the image.
-COPY data/ data/
+# Install dependencies only (not the package itself yet)
+RUN pip install --no-cache-dir discord.py>=2.3 numpy>=1.24 anthropic>=0.40 fastembed>=0.3
 
-RUN pip install --no-cache-dir .
+COPY pieeg_bot/ pieeg_bot/
+# The index is committed and baked into the image.
+COPY data/ data/
 
 # Pre-download the fastembed model so the first query at runtime is instant.
 RUN python -c "from pieeg_bot import embeddings; embeddings.warm()"
 
-CMD ["pieeg-bot", "run"]
+CMD ["python", "-m", "pieeg_bot", "run"]
