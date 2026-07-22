@@ -1,22 +1,17 @@
-# fly.toml — PiEEG-bot
+# fly.toml app configuration file generated for pieeg-bot on 2026-07-22T16:46:43-04:00
 #
-# The bot is a Discord gateway *client*: it makes an outbound WebSocket
-# connection and has no inbound HTTP service, so there is no [http_service]
-# block and no health check port. One always-on machine is enough.
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-# See https://fly.io/docs/reference/configuration/ for details.
 
 app = 'pieeg-bot'
 primary_region = 'lhr'
 
 [build]
-
 [env]
   PIEEG_CHAT_MODEL = 'claude-haiku-4-5'
   PIEEG_EMBED_MODEL = 'BAAI/bge-small-en-v1.5'
 
 [[vm]]
-  # 512MB gives headroom for the fastembed ONNX runtime + model.
   memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
