@@ -1,57 +1,29 @@
 name: Refresh documentation index
 
-# Rebuild data/index.json from the docs repos nightly (and on demand), then
-# commit it and deploy so the bot always serves fresh documentation.
+# The docs index is rebuilt from the live docs on every image build (see the
+# Dockerfile), so "refreshing" the index just means deploying. This job triggers
+# a nightly deploy; Fly's remote builder re-ingests the latest docs each time.
+# One step, one failure mode — no git commits, no push permissions, no state.
 on:
   schedule:
     - cron: "0 5 * * *" # 05:00 UTC daily
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 concurrency:
-  group: refresh-index
+  group: deploy
   cancel-in-progress: true
 
 jobs:
-  refresh:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install
-        run: pip install .
-
-      - name: Rebuild index
-        run: pieeg-bot ingest
-
-      - name: Commit index if changed
-        id: commit
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- data/index.json; then
-            echo "Index unchanged; nothing to commit."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git add data/index.json
-          git commit -m "chore: refresh documentation index"
-          git push
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-
       - name: Deploy to Fly.io
-        # Deploy only when the index actually changed and a Fly token is set.
-        if: ${{ steps.commit.outputs.changed == 'true' && secrets.FLY_API_TOKEN != '' }}
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           curl -L https://fly.io/install.sh | sh
           "$HOME/.fly/bin/flyctl" deploy --remote-only
+
