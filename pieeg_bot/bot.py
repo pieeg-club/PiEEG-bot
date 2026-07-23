@@ -26,9 +26,9 @@ SYSTEM_PROMPT = (
     "brain-computer-interface community. Answer the user's question using ONLY "
     "the documentation excerpts provided in CONTEXT. Be concise, friendly and "
     "practical. If the context does not contain the answer, say so plainly and "
-    "suggest asking in the community Discord — do not invent details, part "
-    "numbers, pin-outs or API names. Do not add source links yourself; they are "
-    "appended automatically."
+    "suggest rephrasing the question or asking the team for help — do not invent "
+    "details, part numbers, pin-outs or API names. Do not add source links "
+    "yourself; they are appended automatically."
 )
 
 MAX_REPLY = 1900  # Stay under Discord's 2000-character message limit.
@@ -77,7 +77,7 @@ class PiEEGBot(discord.Client):
         if not results:
             return (
                 "I couldn't find that in the PiEEG documentation. "
-                f"Try asking the community: {config.DISCORD_INVITE}"
+                "Try rephrasing your question or ask the team here for help."
             )
 
         context = _build_context(results)
