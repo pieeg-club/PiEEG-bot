@@ -14,6 +14,4 @@ venv/
 # Ingestion working data — cloned repos are transient.
 data/sources/
 
-# The index is a build artifact, rebuilt from the live docs on every image
-# build (see the Dockerfile), so it is not committed.
-data/index.json
+# The built index IS committed (see the nightly workflow), so it is NOT ignored.
