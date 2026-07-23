@@ -5,8 +5,8 @@ Two layers:
 * ``test_retrieval_*`` run everywhere — they embed locally with fastembed and
   exercise the in-memory cosine retriever. No API key, no network.
 * ``test_live_answer_is_grounded`` runs only when ``ANTHROPIC_API_KEY`` is set.
-  It drives the *real* production prompt (``bot.SYSTEM_PROMPT`` +
-  ``bot._build_context``) through Claude and checks the answer is grounded in
+  It drives the *real* production prompt (``engine.SYSTEM_PROMPT`` +
+  ``engine._build_context``) through Claude and checks the answer is grounded in
   the supplied context.
 """
 
@@ -17,7 +17,7 @@ import os
 import numpy as np
 import pytest
 
-from pieeg_bot import bot, embeddings, llm
+from pieeg_bot import embeddings, engine, llm
 from pieeg_bot.retriever import Retriever
 
 # A tiny stand-in corpus so tests don't depend on a built index.json.
@@ -87,12 +87,12 @@ async def test_retrieval_ranks_electrodes_for_setup(retriever: Retriever) -> Non
 async def test_live_answer_is_grounded(retriever: Retriever) -> None:
     question = "What sample rate does the PiEEG board use?"
     results = await retriever.search(question)
-    context = bot._build_context(results)
+    context = engine._build_context(results)
     user = f"CONTEXT:\n{context}\n\nQUESTION: {question}"
 
     client = llm.build_client(os.environ["ANTHROPIC_API_KEY"])
     try:
-        answer = await llm.chat(client, bot.SYSTEM_PROMPT, user)
+        answer = await llm.chat(client, engine.SYSTEM_PROMPT, user)
     finally:
         await client.close()
 

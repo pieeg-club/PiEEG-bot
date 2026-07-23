@@ -40,11 +40,22 @@ cp .env.example .env   # fill in ANTHROPIC_API_KEY and DISCORD_TOKEN
 #    No API key needed — embeddings run on-device via fastembed.
 pieeg-bot ingest
 
-# 2. Run the bot
+# 2. Try it locally — no Discord required (reads ANTHROPIC_API_KEY from .env)
+pieeg-bot ask "How do I attach the electrodes?"   # one-shot
+pieeg-bot ask "..." --scores                        # also print retrieval scores
+pieeg-bot chat                                       # interactive REPL
+
+# 3. Run the bot on Discord
 export ANTHROPIC_API_KEY=sk-ant-...
 export DISCORD_TOKEN=...
 pieeg-bot run
 ```
+
+`ask` and `chat` exercise the exact same retrieval + prompt pipeline the Discord
+bot uses (`pieeg_bot/engine.py`), so they're the fastest way to sanity-check the
+index, tune `PIEEG_TOP_K` / `PIEEG_MIN_SCORE`, or demo answers without a token.
+All commands auto-load a local `.env`, so exporting the variables by hand is
+optional.
 
 In Discord:
 

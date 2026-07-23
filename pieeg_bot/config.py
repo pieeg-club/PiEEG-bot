@@ -90,3 +90,21 @@ def require_env(name: str) -> str:
             "See .env.example for the full list."
         )
     return value
+
+
+def load_env(path: Path | None = None) -> None:
+    """Load ``KEY=VALUE`` lines from a ``.env`` file into ``os.environ``.
+
+    Existing environment variables win (``setdefault``), so anything already
+    exported in the shell is never overwritten. The parser is deliberately tiny
+    — no dependency on python-dotenv for a format this simple.
+    """
+    env_file = path or (ROOT / ".env")
+    if not env_file.exists():
+        return
+    for raw in env_file.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip())
