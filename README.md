@@ -10,7 +10,7 @@ markdown — and always links back to the source pages.
 ```
 PiEEG-docs + PiEEG-com  ──git clone──▶  chunk by heading  ──embed──▶  data/index.json
                                                                             │
-Discord  ──/ask or @mention──▶  cosine top-k  ──▶  one LLM call (grounded)  ─┘
+Discord / REST  ──ask──▶  cosine top-k  ──▶  one LLM call (grounded)  ─────┘
 ```
 
 No vector database. The corpus is a few dozen markdown files, so the whole index
@@ -62,6 +62,52 @@ In Discord:
 - `/ask <question>` — slash command, works anywhere the bot is installed.
 - `@PiEEG-bot <question>` — mention it in any channel it can read.
 
+## REST API
+
+The Fly deployment exposes the same answer engine through `POST /ask`. The
+FastAPI server and Discord client run in one process and share one in-memory
+index, embedding model, and Anthropic client; requests from either transport use
+the same retrieval and grounding pipeline.
+
+Set a separate API key for applications that call the REST endpoint:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+export DISCORD_TOKEN=...
+export PIEEG_API_KEY=replace-with-a-long-random-secret
+uvicorn pieeg_bot.api:app --host 0.0.0.0 --port 8080
+```
+
+This command starts both the HTTP server and the existing Discord bot. The
+`pieeg-bot run` command is still available when only Discord is needed.
+
+Ask a question from another server-side application:
+
+```bash
+curl -X POST http://localhost:8080/ask \
+    -H "Content-Type: application/json" \
+    -H "X-API-Key: replace-with-a-long-random-secret" \
+    -d '{"question":"How do I attach the electrodes?"}'
+```
+
+The response is structured JSON so clients do not need to parse Discord
+Markdown:
+
+```json
+{
+    "answer": "...",
+    "grounded": true,
+    "sources": [
+        {"title": "...", "url": "https://docs.pieeg.com/..."}
+    ]
+}
+```
+
+`GET /health` is public for Fly health checks. `POST /ask` requires the API key
+in the `X-API-Key` header. Keep this key on the calling application's server;
+the endpoint does not enable browser CORS and is not intended to expose a secret
+from frontend JavaScript.
+
 ## Configuration
 
 All settings have sensible defaults; override via environment variables
@@ -69,8 +115,9 @@ All settings have sensible defaults; override via environment variables
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | — (required for `run`) | Chat answers (Claude) |
-| `DISCORD_TOKEN` | — (required for `run`) | Discord bot token |
+| `ANTHROPIC_API_KEY` | — (required) | Chat answers (Claude) |
+| `DISCORD_TOKEN` | — (required for Discord) | Discord bot token |
+| `PIEEG_API_KEY` | — (required for REST) | Secret accepted by `POST /ask` |
 | `PIEEG_CHAT_MODEL` | `claude-haiku-4-5` | Answer model |
 | `PIEEG_MAX_TOKENS` | `1024` | Max answer length |
 | `PIEEG_EMBED_MODEL` | `BAAI/bge-small-en-v1.5` | Local embedding model (fastembed) |
@@ -120,16 +167,21 @@ Fly.io. Ingestion embeds locally, so **no API key secret is required** — only
 
 ## Deployment (Fly.io)
 
-The bot is a Discord gateway client with no inbound HTTP, so a single always-on
-`512mb` machine is plenty — the extra headroom is for the fastembed ONNX runtime
-(see [`fly.toml`](fly.toml)). The committed index is baked into the image at
-build time.
+One always-on `512mb` Fly machine runs both the HTTP service and Discord gateway
+client. The extra headroom is for the fastembed ONNX runtime (see
+[`fly.toml`](fly.toml)). The committed index is baked into the image at build
+time, and Fly checks the public `/health` endpoint.
 
 ```bash
 fly launch --no-deploy       # first time only
-fly secrets set ANTHROPIC_API_KEY=sk-ant-... DISCORD_TOKEN=...
+fly secrets set ANTHROPIC_API_KEY=sk-ant-... DISCORD_TOKEN=... PIEEG_API_KEY=...
 fly deploy
 ```
+
+The production endpoint is `https://pieeg-bot.fly.dev/ask` unless the Fly app
+name or custom domain is changed. Generate `PIEEG_API_KEY` with a password
+manager or `python -c "import secrets; print(secrets.token_urlsafe(32))"` and
+give it only to applications allowed to consume the API.
 
 ## Development
 

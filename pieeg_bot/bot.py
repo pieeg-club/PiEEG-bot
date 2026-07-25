@@ -21,12 +21,13 @@ from .engine import Engine
 
 
 class PiEEGBot(discord.Client):
-    def __init__(self, api_key: str) -> None:
+    def __init__(self, engine: Engine, *, close_engine: bool = True) -> None:
         intents = discord.Intents.default()
         intents.message_content = True
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
-        self._engine = Engine(api_key)
+        self._engine = engine
+        self._close_engine = close_engine
 
     async def setup_hook(self) -> None:
         # Load the embedding model up front so the first query isn't slow.
@@ -34,7 +35,8 @@ class PiEEGBot(discord.Client):
         await self.tree.sync()
 
     async def close(self) -> None:
-        await self._engine.close()
+        if self._close_engine:
+            await self._engine.close()
         await super().close()
 
     async def answer(self, question: str) -> str:
@@ -53,9 +55,9 @@ class PiEEGBot(discord.Client):
         await message.reply(reply, mention_author=False)
 
 
-def build_client() -> PiEEGBot:
-    api_key = config.require_env("ANTHROPIC_API_KEY")
-    client = PiEEGBot(api_key)
+def build_client(engine: Engine | None = None) -> PiEEGBot:
+    owns_engine = engine is None
+    client = PiEEGBot(engine or Engine.create(), close_engine=owns_engine)
 
     @client.tree.command(name="ask", description="Ask a question about PiEEG.")
     @app_commands.describe(question="What do you want to know?")

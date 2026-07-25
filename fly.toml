@@ -11,6 +11,20 @@ primary_region = 'lhr'
   PIEEG_CHAT_MODEL = 'claude-haiku-4-5'
   PIEEG_EMBED_MODEL = 'BAAI/bge-small-en-v1.5'
 
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '30s'
+    method = 'GET'
+    path = '/health'
+
 [[vm]]
   memory = '512mb'
   cpu_kind = 'shared'
