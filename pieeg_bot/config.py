@@ -78,6 +78,12 @@ SOURCES: list[Source] = [
         content_dir="content/news",
         url_base="https://pieeg.com/news",
     ),
+    Source(
+        name="PiEEG Tutorials",
+        repo="https://github.com/pieeg-club/PiEEG-com.git",
+        content_dir="content/tutorials",
+        url_base="https://pieeg.com/tutorials",
+    ),
 ]
 
 
