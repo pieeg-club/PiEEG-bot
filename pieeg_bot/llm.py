@@ -22,7 +22,6 @@ async def chat(client: AsyncAnthropic, system: str, user: str) -> str:
     message = await client.messages.create(
         model=config.CHAT_MODEL,
         max_tokens=config.MAX_TOKENS,
-        temperature=0.2,
         system=system,
         messages=[{"role": "user", "content": user}],
     )
